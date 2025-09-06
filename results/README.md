@@ -48,8 +48,8 @@ If you do not see this image after a full run, check the Troubleshooting section
   - Quick (no comparison): `python run_complete_project.py --quick`
 
 - If you ran Quick first and now want the comparison:
-  1) Train LLM: `python speech_llm_approach.py`
-  2) Generate comparison: `python comparison_analysis.py`
+  - Train LLM: `python speech_llm_approach.py`
+  - Generate comparison: `python comparison_analysis.py`
 
 The comparison requires:
 - models/classical_keyword_spotter.pkl
