@@ -1,1 +1,26 @@
+=== KEYWORD SPOTTER ANALYSIS REPORT ===
+
+CLASSICAL APPROACH RESULTS:
+----------------------------------------
+
+Best Classical:
+  Accuracy: 0.893
+  AUC: 0.963
+  False Positive Rate: 0.134
+
+
+SPEECH LLM APPROACH RESULTS:
+----------------------------------------
+  Test Accuracy: 0.987
+  Test Loss: 0.000
+  Training Time: 112.2 minutes
+
+
+COMPARISON SUMMARY:
+----------------------------------------
+Best Classical Model: SVM
+Best Classical Accuracy: 0.893
+Speech LLM Accuracy: 0.987
+Winner: Speech LLM
+Performance Difference: 0.093
 
