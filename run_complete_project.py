@@ -143,6 +143,14 @@ class ProjectRunner:
         self.print_header("PHASE 4: COMPARATIVE ANALYSIS", "📊")
         phase_start = time.time()
         try:
+            # Skip comparison if both models are not available
+            from pathlib import Path
+            classical_present = Path("models/classical_keyword_spotter.pkl").exists()
+            llm_present = (Path("models/speech_llm_model") / "config.json").exists()
+            if not (classical_present and llm_present):
+                print("ℹ️ Comparison requires both models (Classical + Speech LLM). Skipping comparison phase.")
+                return True
+
             comparison_results = comparison_main()
             if isinstance(comparison_results, tuple) and len(comparison_results) >= 1:
                 comparison_results = comparison_results[0]
