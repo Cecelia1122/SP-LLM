@@ -6,7 +6,7 @@ This folder is populated mainly by the Comparative Analysis phase.
 - Quick run (`--quick`): Skips Speech LLM and Comparison — this folder can remain empty (expected).
 - Full run: Trains both models and generates the comparison figure, report, and CSV summary.
 
-## TL;DR — What you’ll see here
+## What you’ll see here
 
 - comprehensive_comparison.png — Side‑by‑side Classical vs Speech LLM performance visualization
 - detailed_comparison_report.txt — Human‑readable summary with key findings
