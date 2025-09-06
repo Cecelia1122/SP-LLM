@@ -1,17 +1,24 @@
-numpy>=1.21.0
-pandas>=1.3.0
-matplotlib>=3.4.0
-seaborn>=0.11.0
-librosa>=0.9.0
-pyaudio>=0.2.11
-soundfile>=0.10.0
-scikit-learn>=1.0.0
-joblib>=1.1.0
-torch>=1.9.0
-torchaudio>=0.9.0
-transformers>=4.15.0
-datasets>=1.18.0
-plotly>=5.0.0
-ipywidgets>=7.6.0
-tqdm>=4.60.0
-requests>=2.25.0
+numpy==1.26.4
+pandas==2.2.2
+scikit-learn==1.4.2
+matplotlib==3.8.4
+seaborn==0.13.2
+librosa==0.10.2.post1
+soundfile==0.12.1
+joblib==1.4.2
+tqdm==4.66.4
+requests==2.32.3
+plotly==5.22.0
+ipywidgets==8.1.2
+
+# PyTorch core (CPU / MPS). Install together to prevent mismatch.
+torch==2.2.2
+torchaudio==2.2.2
+
+# Hugging Face stack
+transformers==4.41.2
+datasets==2.19.0
+
+#realtime audio input
+pyaudio==0.2.14
+
