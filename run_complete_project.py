@@ -335,7 +335,8 @@ def main():
 
     if args.quick:
         args.skip_speech_llm = True
-        print("🚀 Quick mode: Skipping Speech LLM training")
+        args.skip_comparison = True
+        print("🚀 Quick mode: Skipping Speech LLM training and comparison")
 
     runner = ProjectRunner()
     results = runner.run_complete_project(
@@ -346,7 +347,6 @@ def main():
         skip_demo=args.skip_demo
     )
     return results
-
 
 if __name__ == "__main__":
     main()
