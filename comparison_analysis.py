@@ -269,7 +269,7 @@ class ModelComparator:
         return self.comparison_results
 
     def create_comprehensive_visualizations(self):
-        """Create comprehensive comparison visualizations"""
+        """Create comprehensive comparison visualizations with safe spacing/labels"""
         print("📈 Creating comprehensive visualizations...")
 
         if not self.comparison_results:
@@ -278,8 +278,8 @@ class ModelComparator:
 
         os.makedirs("results", exist_ok=True)
 
-        # Create main comparison figure (smaller to avoid huge files/windows)
-        fig = plt.figure(figsize=(12, 9))  # reduced from (20, 16)
+        # Use constrained layout to avoid panel overlaps
+        fig = plt.figure(figsize=(14, 10), constrained_layout=True)
 
         # 1. Performance Metrics Comparison (Top Left)
         ax1 = plt.subplot(3, 3, 1)
@@ -311,35 +311,39 @@ class ModelComparator:
         ax1.set_xticks(x)
         ax1.set_xticklabels(metrics, rotation=45, fontsize=8)
         ax1.legend(fontsize=8)
-        ax1.set_ylim(0, 1.1)
+        # Add headroom and keep labels inside when near the top
+        ax1.set_ylim(0, 1.12)
 
-        # Add value labels
+        # Safer value labels (inside if high)
         for bars in [bars1, bars2]:
             for bar in bars:
-                height = bar.get_height()
-                ax1.text(bar.get_x() + bar.get_width()/2., height + 0.01,
-                        f'{height:.3f}', ha='center', va='bottom', fontsize=7)
+                h = bar.get_height()
+                if h > 0.2:
+                    y = h - 0.04
+                    va = 'top'
+                else:
+                    y = h + 0.01
+                    va = 'bottom'
+                ax1.text(bar.get_x() + bar.get_width()/2., y, f'{h:.3f}',
+                        ha='center', va=va, fontsize=7, color='black', clip_on=False)
 
         # 2. ROC Curves Comparison (Top Center)
         ax2 = plt.subplot(3, 3, 2)
 
-        # Classical ROC
         fpr_classical, tpr_classical, _ = roc_curve(
-            self.comparison_results['test_labels'], 
+            self.comparison_results['test_labels'],
             self.comparison_results['classical']['probabilities']
         )
-
-        # Speech LLM ROC
         fpr_speech_llm, tpr_speech_llm, _ = roc_curve(
-            self.comparison_results['test_labels'], 
+            self.comparison_results['test_labels'],
             self.comparison_results['speech_llm']['probabilities']
         )
 
-        ax2.plot(fpr_classical, tpr_classical, 
-                label=f'Classical (AUC: {self.comparison_results["classical"]["auc"]:.3f})', 
+        ax2.plot(fpr_classical, tpr_classical,
+                label=f'Classical (AUC: {self.comparison_results["classical"]["auc"]:.3f})',
                 linewidth=2, color='blue')
-        ax2.plot(fpr_speech_llm, tpr_speech_llm, 
-                label=f'Speech LLM (AUC: {self.comparison_results["speech_llm"]["auc"]:.3f})', 
+        ax2.plot(fpr_speech_llm, tpr_speech_llm,
+                label=f'Speech LLM (AUC: {self.comparison_results["speech_llm"]["auc"]:.3f})',
                 linewidth=2, color='red')
         ax2.plot([0, 1], [0, 1], 'k--', alpha=0.5)
         ax2.set_xlabel('False Positive Rate', fontsize=8)
@@ -354,48 +358,48 @@ class ModelComparator:
         classical_time = self.comparison_results['classical']['avg_inference_time'] * 1000
         speech_llm_time = self.comparison_results['speech_llm']['avg_inference_time'] * 1000
 
-        bars = ax3.bar(['Classical', 'Speech LLM'], [classical_time, speech_llm_time], 
-                      alpha=0.8, color=['skyblue', 'lightcoral'])
+        bars = ax3.bar(['Classical', 'Speech LLM'], [classical_time, speech_llm_time],
+                    alpha=0.8, color=['skyblue', 'lightcoral'])
         ax3.set_ylabel('Time (ms)', fontsize=8)
         ax3.set_title('Average Inference Time', fontsize=10)
 
+        max_time = max(classical_time, speech_llm_time)
+        ax3.set_ylim(0, max_time * 1.25)  # add headroom so labels never clip
+
         for bar, time_val in zip(bars, [classical_time, speech_llm_time]):
-            ax3.text(bar.get_x() + bar.get_width()/2, bar.get_height() + max(classical_time, speech_llm_time)*0.02,
+            ax3.text(bar.get_x() + bar.get_width()/2, time_val + max_time * 0.03,
                     f'{time_val:.1f}ms', ha='center', va='bottom', fontsize=8)
 
         # 4. Confusion Matrix - Classical (Middle Left)
         ax4 = plt.subplot(3, 3, 4)
-
         cm_classical = confusion_matrix(
-            self.comparison_results['test_labels'], 
+            self.comparison_results['test_labels'],
             self.comparison_results['classical']['predictions']
         )
-
-        sns.heatmap(cm_classical, annot=True, fmt='d', cmap='Blues', ax=ax4, cbar=False)
+        sns.heatmap(cm_classical, annot=True, fmt='d', cmap='Blues', ax=ax4,
+                    cbar=False)
         ax4.set_title('Confusion Matrix - Classical', fontsize=10)
         ax4.set_xlabel('Predicted', fontsize=8)
         ax4.set_ylabel('Actual', fontsize=8)
 
         # 5. Confusion Matrix - Speech LLM (Middle Center)
         ax5 = plt.subplot(3, 3, 5)
-
         cm_speech_llm = confusion_matrix(
-            self.comparison_results['test_labels'], 
+            self.comparison_results['test_labels'],
             self.comparison_results['speech_llm']['predictions']
         )
-
-        sns.heatmap(cm_speech_llm, annot=True, fmt='d', cmap='Reds', ax=ax5, cbar=False)
+        sns.heatmap(cm_speech_llm, annot=True, fmt='d', cmap='Reds', ax=ax5,
+                    cbar=False)
         ax5.set_title('Confusion Matrix - Speech LLM', fontsize=10)
         ax5.set_xlabel('Predicted', fontsize=8)
         ax5.set_ylabel('Actual', fontsize=8)
 
         # 6. Probability Distribution Comparison (Middle Right)
         ax6 = plt.subplot(3, 3, 6)
-
-        ax6.hist(self.comparison_results['classical']['probabilities'], bins=30, alpha=0.7, 
-                label='Classical', color='blue', density=True)
-        ax6.hist(self.comparison_results['speech_llm']['probabilities'], bins=30, alpha=0.7, 
-                label='Speech LLM', color='red', density=True)
+        ax6.hist(self.comparison_results['classical']['probabilities'], bins=30, alpha=0.5,
+                label='Classical', color='blue', density=True, histtype='stepfilled')
+        ax6.hist(self.comparison_results['speech_llm']['probabilities'], bins=30, alpha=0.5,
+                label='Speech LLM', color='red', density=True, histtype='stepfilled')
         ax6.set_xlabel('Prediction Probability', fontsize=8)
         ax6.set_ylabel('Density', fontsize=8)
         ax6.set_title('Prediction Probability Distribution', fontsize=10)
@@ -404,36 +408,38 @@ class ModelComparator:
 
         # 7. Model Complexity Comparison (Bottom Left)
         ax7 = plt.subplot(3, 3, 7)
+        classical_params = 0.01  # MB
+        speech_llm_params = 95   # MB
 
-        # Approximate model sizes
-        classical_params = 0.01  # MB (tiny)
-        speech_llm_params = 95   # MB (Wav2Vec2 base ~95MB)
-
-        bars = ax7.bar(['Classical\n(MFCC+SVM)', 'Speech LLM\n(Wav2Vec2)'], 
-                      [classical_params, speech_llm_params], 
-                      alpha=0.8, color=['skyblue', 'lightcoral'])
+        bars = ax7.bar(['Classical\n(MFCC+SVM)', 'Speech LLM\n(Wav2Vec2)'],
+                    [classical_params, speech_llm_params],
+                    alpha=0.8, color=['skyblue', 'lightcoral'])
         ax7.set_ylabel('Model Size (MB)', fontsize=8)
         ax7.set_title('Model Complexity Comparison', fontsize=10)
         ax7.set_yscale('log')
+        # Log-space bounds with margin so labels are never clipped
+        ax7.set_ylim(classical_params/10, speech_llm_params*10)
 
         for bar, size in zip(bars, [classical_params, speech_llm_params]):
-            ax7.text(bar.get_x() + bar.get_width()/2, bar.get_height() * 1.5,
-                    f'{size:.2f}MB', ha='center', va='bottom', fontsize=8)
+            # Place label INSIDE the bar (safer on log scale)
+            ax7.text(bar.get_x() + bar.get_width()/2, bar.get_height()/1.25,
+                    f'{size:.2f}MB', ha='center', va='top', fontsize=8, color='black')
 
         # 8. Training Requirements (Bottom Center)
         ax8 = plt.subplot(3, 3, 8)
-
-        # Approximate training times (static visual)
-        classical_train_time = 5    # Classical is much faster
-        speech_llm_train_time = 120 # Speech LLM takes longer
-
-        bars = ax8.bar(['Classical', 'Speech LLM'], [classical_train_time, speech_llm_train_time], 
-                      alpha=0.8, color=['skyblue', 'lightcoral'])
+        classical_train_time = 5
+        speech_llm_train_time = 120
+        bars = ax8.bar(['Classical', 'Speech LLM'],
+                    [classical_train_time, speech_llm_train_time],
+                    alpha=0.8, color=['skyblue', 'lightcoral'])
         ax8.set_ylabel('Training Time (minutes)', fontsize=8)
         ax8.set_title('Training Requirements', fontsize=10)
 
+        max_train = max(classical_train_time, speech_llm_train_time)
+        ax8.set_ylim(0, max_train * 1.25)
+
         for bar, time_val in zip(bars, [classical_train_time, speech_llm_train_time]):
-            ax8.text(bar.get_x() + bar.get_width()/2, bar.get_height() + max(classical_train_time, speech_llm_train_time)*0.02,
+            ax8.text(bar.get_x() + bar.get_width()/2, time_val + max_train * 0.03,
                     f'{time_val}min', ha='center', va='bottom', fontsize=8)
 
         # 9. Summary Table (Bottom Right)
@@ -441,17 +447,16 @@ class ModelComparator:
         ax9.axis('tight')
         ax9.axis('off')
 
-        # Create summary table
         table_data = [
             ['Metric', 'Classical', 'Speech LLM', 'Winner'],
-            ['Accuracy', f'{self.comparison_results["classical"]["accuracy"]:.3f}', 
-             f'{self.comparison_results["speech_llm"]["accuracy"]:.3f}', 
-             'Speech LLM' if self.comparison_results["speech_llm"]["accuracy"] > self.comparison_results["classical"]["accuracy"] else 'Classical'],
-            ['AUC', f'{self.comparison_results["classical"]["auc"]:.3f}', 
-             f'{self.comparison_results["speech_llm"]["auc"]:.3f}', 
-             'Speech LLM' if self.comparison_results["speech_llm"]["auc"] > self.comparison_results["classical"]["auc"] else 'Classical'],
-            ['Speed (ms)', f'{classical_time:.1f}', f'{speech_llm_time:.1f}', 
-             'Classical' if classical_time < speech_llm_time else 'Speech LLM'],
+            ['Accuracy', f'{self.comparison_results["classical"]["accuracy"]:.3f}',
+            f'{self.comparison_results["speech_llm"]["accuracy"]:.3f}',
+            'Speech LLM' if self.comparison_results["speech_llm"]["accuracy"] > self.comparison_results["classical"]["accuracy"] else 'Classical'],
+            ['AUC', f'{self.comparison_results["classical"]["auc"]:.3f}',
+            f'{self.comparison_results["speech_llm"]["auc"]:.3f}',
+            'Speech LLM' if self.comparison_results["speech_llm"]["auc"] > self.comparison_results["classical"]["auc"] else 'Classical'],
+            ['Speed (ms)', f'{classical_time:.1f}', f'{speech_llm_time:.1f}',
+            'Classical' if classical_time < speech_llm_time else 'Speech LLM'],
             ['Model Size', '~0.01MB', '~95MB', 'Classical'],
             ['Training Time', '~5min', '~120min', 'Classical']
         ]
@@ -462,9 +467,8 @@ class ModelComparator:
         table.scale(1.05, 1.2)
         ax9.set_title('Summary Comparison', pad=10, fontsize=10)
 
-        plt.tight_layout()
         out_path = 'results/comprehensive_comparison.png'
-        plt.savefig(out_path, dpi=200, bbox_inches='tight')
+        fig.savefig(out_path, dpi=200, bbox_inches='tight', pad_inches=0.2)
         plt.close(fig)
         print(f"✅ Comprehensive visualizations saved! -> {out_path}")
 
