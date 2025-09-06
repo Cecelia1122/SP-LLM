@@ -133,6 +133,7 @@ processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base")
 ## 📈 Results & Performance (measured)
 
 Sources: results/detailed_comparison_report.txt, results/model_comparison_summary.csv, speech_llm_performance_tracking.json
+![Comprehensive comparison](results/comprehensive_comparison.png)
 
 - Best Classical Model: SVM
   - Accuracy: 0.893
