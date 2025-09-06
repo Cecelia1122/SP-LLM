@@ -41,20 +41,32 @@ Microphone support:
 - Windows: pip install pipwin && pipwin install pyaudio
 - Linux: sudo apt-get install libasound2-dev portaudio19-dev && pip install pyaudio
 
-### 2. Complete Project Pipeline
+## Complete Project Pipeline
+Run everything (includes Speech LLM training — GPU recommended for speed):
 ```bash
-# Run everything (includes Speech LLM training - GPU recommended for speed)
 python run_complete_project.py
-
-# Quick mode (skip computationally intensive Speech LLM training)
-python run_complete_project.py --quick
-
-# Focus on the real-time demo and save time by skipping the comparison phase
-python run_complete_project.py --skip-comparison
-# Or combine both:
-python run_complete_project.py --skip-comparison --quick
 ```
 
+Quick run (Classical only; skips Speech LLM training and Comparison):
+```bash
+python run_complete_project.py --quick
+```
+
+Skip just the comparison (useful if both models exist but you want to save time now):
+```bash
+python run_complete_project.py --skip-comparison
+```
+
+Notes:
+- When the Speech LLM model isn’t available, the comparison phase is skipped automatically.
+- Combining `--quick` and `--skip-comparison` is redundant (quick already skips comparison).
+
+Other useful flags:
+- `--skip-data` — skip data preparation
+- `--skip-classical` — skip classical training
+- `--skip-speech-llm` — skip Speech LLM training
+- `--skip-demo` — skip the real-time demo
+  
 ### 3. Step-by-step Execution
 ```bash
 python data_preparation.py
