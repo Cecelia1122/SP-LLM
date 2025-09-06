@@ -237,9 +237,9 @@ class ClassicalKeywordSpotter:
                     'accuracy': metrics.get('accuracy', 0.0),
                     'auc': metrics.get('auc', 0.0),
                     'false_positive_rate': metrics.get('false_positive_rate', 0.0),
-                    # include test metrics if available
-                    'test_accuracy': metrics.get('test_accuracy', np.nan) if 'test_accuracy' in metrics else np.nan,
-                    'test_auc': metrics.get('test_auc', np.nan) if 'test_auc' in metrics else np.nan
+                    # Use None when test metrics are not present to keep JSON strict
+                    'test_accuracy': metrics.get('test_accuracy', None),
+                    'test_auc': metrics.get('test_auc', None),
                 }
             )
         return self.models
