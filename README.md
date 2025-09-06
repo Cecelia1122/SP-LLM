@@ -4,7 +4,7 @@ A comprehensive speech signal processing project comparing classical feature ext
 
 ## 🎯 Project Overview
 
-This project demonstrates both **classical signal processing** and **modern Speech LLM** approaches for keyword detection, specifically designed to showcase skills relevant to speech signal processing research positions.
+This project demonstrates both **classical signal processing** and **modern Speech LLM** approaches for keyword detection, specifically designed to showcase skills relevant to speech signal processing, real-time inference, and model evaluation.
 
 ### Key Features
 - **Classical Approach**: MFCC feature extraction + traditional ML (SVM, Random Forest, Neural Networks)
@@ -16,65 +16,89 @@ This project demonstrates both **classical signal processing** and **modern Spee
 ## 📊 Technical Highlights
 
 | Aspect | Classical Approach | Speech LLM Approach |
-|--------|-------------------|-------------------|
+|--------|-------------------|---------------------|
 | **Features** | MFCC + Spectral + Energy | Raw audio → Learned representations |
 | **Model Size** | ~0.01 MB | ~95 MB |
-| **Training Time** | ~5 minutes | ~2 hours |
-| **Inference Speed** | ~5 ms/sample | ~50 ms/sample |
-| **Typical Accuracy** | 85-90% | 90-95% |
+| **Training Time (measured)** | ~5–10 minutes | ~112.2 minutes |
+| **Inference Speed (measured)** | ~86 ms per ~1 s window | ~452 ms per ~1 s window |
+| **Accuracy (measured)** | 0.893 | 0.987 |
+
+Notes:
+- Inference speed reflects the real-time detector’s processing of a ~1 s audio window.
+- Measured results are summarized below with sources in the results/ directory.
 
 ## 🚀 Quick Start
 
 ### 1. Installation
 ```bash
-git clone <your-repo>
-cd keyword-spotter
+git clone https://github.com/Cecelia1122/SP-LLM
+cd SP-LLM
 pip install -r requirements.txt
 ```
 
+Microphone support:
+- macOS: brew install portaudio && pip install pyaudio
+- Windows: pip install pipwin && pipwin install pyaudio
+- Linux: sudo apt-get install libasound2-dev portaudio19-dev && pip install pyaudio
+
 ### 2. Complete Project Pipeline
 ```bash
-# Run everything (includes Speech LLM training - requires GPU for reasonable speed)
+# Run everything (includes Speech LLM training - GPU recommended for speed)
 python run_complete_project.py
 
 # Quick mode (skip computationally intensive Speech LLM training)
 python run_complete_project.py --quick
 
-# Step by step execution
-python 1_data_preparation.py
-python 2_classical_approach.py
-python 3_speech_llm_approach.py
-python 5_comparison_analysis.py
+# Focus on the real-time demo and save time by skipping the comparison phase
+python run_complete_project.py --skip-comparison
+# Or combine both:
+python run_complete_project.py --skip-comparison --quick
 ```
 
-### 3. Real-time Detection
+### 3. Step-by-step Execution
 ```bash
-python 4_real_time_detector.py
+python data_preparation.py
+python classical_approach.py
+python speech_llm_approach.py
+python comparison_analysis.py
 ```
+
+### 4. Real-time Detection (standalone)
+```bash
+python realtime_detector.py
+```
+- Modes: continuous listening, manual record-and-test, or file-based test.
+- During continuous mode you can switch models via console:
+  - c or classical → Classical model
+  - s, speech, or llm → Speech LLM
+  - m or toggle → toggle models
+  - q → quit
+- Console confirmations:
+  - “🤖 Active model now: …”
+  - “✅ … model activated for detection”
 
 ## 📁 Project Structure
 
 ```
-keyword-spotter/
-├── src/
-│   ├── 1_data_preparation.py        # Download Google Speech Commands dataset
-│   ├── 2_classical_approach.py      # MFCC + ML classifiers training
-│   ├── 3_speech_llm_approach.py     # Wav2Vec2 fine-tuning
-│   ├── 4_real_time_detector.py      # Live microphone detection
-│   ├── 5_comparison_analysis.py     # Compare both approaches
-│   └── utils.py                     # Shared utilities
+SP-LLM/
 ├── data/
 │   ├── speech_commands_dataset/     # Google Speech Commands dataset
 │   └── splits/                      # Train/validation/test splits
 ├── models/
 │   ├── classical_keyword_spotter.pkl
-│   └── speech_llm_model/           # Fine-tuned Wav2Vec2
+│   └── speech_llm_model/            # Fine-tuned Wav2Vec2
 ├── results/
 │   ├── comprehensive_comparison.png
 │   ├── detailed_comparison_report.txt
 │   └── model_comparison_summary.csv
+├── data_preparation.py              # Download & prepare dataset, create splits
+├── classical_approach.py            # MFCC + ML classifiers training
+├── speech_llm_approach.py           # Wav2Vec2 fine-tuning & inference
+├── comparison_analysis.py           # Compare both approaches
+├── realtime_detector.py             # Live microphone detection (modes 1/2/3)
+├── run_complete_project.py          # Orchestrates the full pipeline
+├── utils.py                         # Shared utilities (features, constants)
 ├── requirements.txt
-├── run_complete_project.py         # Main execution script
 └── README.md
 ```
 
@@ -83,176 +107,110 @@ keyword-spotter/
 ### Classical Signal Processing Approach
 
 **Feature Extraction Pipeline:**
-1. **MFCC Extraction**: 13 mel-frequency cepstral coefficients
-2. **Spectral Features**: Centroid, rolloff, bandwidth
-3. **Temporal Features**: Zero-crossing rate, energy
-4. **Pitch Features**: Chroma features
+1. MFCC (13 coefficients)
+2. Spectral features: centroid, rolloff, bandwidth
+3. Temporal features: zero-crossing rate, energy
+4. Optional pitch features: chroma
 
 **Classification Models:**
-- **SVM**: RBF kernel with hyperparameter tuning
-- **Random Forest**: 200+ trees with balanced classes
-- **Neural Network**: Multi-layer perceptron with early stopping
+- SVM (RBF + hyperparameter tuning)
+- Random Forest (balanced, 200+ trees)
+- MLP (early stopping)
 
 ### Speech LLM Approach
 
 **Model Architecture:**
-- **Base Model**: Facebook's Wav2Vec2-base (95M parameters)
-- **Fine-tuning**: Binary classification head for keyword detection
-- **Training Strategy**: Frozen feature extractor + trainable transformer layers
+- Base: Wav2Vec2-base (~95M params)
+- Fine-tuning: binary classification head for keyword detection
+- Strategy: frozen feature extractor + trainable transformer layers
 
-**Technical Implementation:**
 ```python
-# Key components
-model = Wav2Vec2ForSequenceClassification.from_pretrained(
-    "facebook/wav2vec2-base",
-    num_labels=2
-)
+from transformers import Wav2Vec2ForSequenceClassification, Wav2Vec2Processor
+model = Wav2Vec2ForSequenceClassification.from_pretrained("facebook/wav2vec2-base", num_labels=2)
 processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base")
 ```
 
-## 📈 Results & Performance
+## 📈 Results & Performance (measured)
 
-### Typical Performance Metrics
-- **Classical Best Model**: SVM with 87.3% accuracy, 0.89 AUC
-- **Speech LLM Model**: Wav2Vec2 with 92.1% accuracy, 0.94 AUC
-- **Real-time Capability**: Both models support live detection
+Sources: results/detailed_comparison_report.txt, results/model_comparison_summary.csv, speech_llm_performance_tracking.json
 
-### Key Insights
-1. **Speech LLMs** achieve higher accuracy but require more computational resources
-2. **Classical methods** offer excellent speed-accuracy tradeoff for production use
-3. **False positive rates** are lower with properly tuned classical models
-4. **Training time** differs significantly (5 minutes vs 2 hours)
+- Best Classical Model: SVM
+  - Accuracy: 0.893
+  - AUC: 0.963
+  - False Positive Rate: 0.134
+  - Inference time: ~86 ms per ~1 s window
+- Speech LLM (Wav2Vec2)
+  - Test Accuracy: 0.987
+  - Precision: 0.996
+  - Recall: 0.976
+  - F1: 0.986
+  - AUC: 0.999
+  - Training time: ~112.2 minutes
+  - Inference time: ~452 ms per ~1 s window
+  - Confusion matrix (Actual vs Predicted): TN=312, FP=1, FN=7, TP=280
+- Overall winner: Speech LLM (+0.093 accuracy over Classical)
+
+Figures (examples) are saved under results/ (ROC curves, confusion matrix, metric bars, training duration).
 
 ## 🎤 Real-time Detection Features
 
-- **Dual Model Support**: Switch between classical and Speech LLM in real-time
-- **Adjustable Confidence**: Configurable detection thresholds
-- **Audio Buffer Management**: Robust handling of audio stream overflow
-- **Cross-platform**: Works on Windows, macOS, and Linux
+- Dual model support with live switching (c / s / m / q)
+- Activation confirmation prints on model switch
+- Configurable thresholds and cooldown
+- Auto-calibrated ambient energy gate + short warm-up to avoid startup blips
+- Cross-platform (Windows, macOS, Linux)
 
 ## 📚 Educational Value
 
-This project demonstrates:
-
-### Classical Signal Processing
-- **Fourier Analysis**: FFT-based spectral feature extraction
-- **Filter Banks**: Mel-scale frequency analysis
-- **Cepstral Analysis**: MFCC computation and interpretation
-- **Feature Engineering**: Handcrafted feature selection
-
-### Modern Speech AI
-- **Transfer Learning**: Fine-tuning pre-trained speech models
-- **Transformer Architecture**: Self-attention mechanisms for speech
-- **End-to-end Learning**: Raw audio to classification
-- **Large Model Handling**: Efficient training and inference
-
-### Software Engineering
-- **ML Pipeline**: Complete data → model → evaluation workflow
-- **Code Organization**: Modular, reusable components
-- **Performance Analysis**: Comprehensive benchmarking
-- **Documentation**: Research-quality reporting
+Demonstrates:
+- Classical DSP: FFT-based features, mel filter banks, MFCCs, feature engineering
+- Modern Speech AI: transfer learning with transformers, end-to-end inference
+- Software Engineering: complete, reproducible ML pipeline with reporting
 
 ## 🔧 Customization
 
-### Adding New Keywords
+### Add a new keyword
 ```python
-# Modify in utils.py
-KEYWORD = "your_keyword"  # Change target keyword
-
-# Retrain models
-python 2_classical_approach.py
-python 3_speech_llm_approach.py
+# utils.py
+KEYWORD = "your_keyword"
+```
+Then retrain:
+```bash
+python classical_approach.py
+python speech_llm_approach.py
 ```
 
-### Model Hyperparameters
+### Adjust model hyperparameters
 ```python
-# Classical approach tuning
-param_grid = {
-    'C': [0.1, 1, 10, 100],
-    'gamma': ['scale', 'auto', 0.001, 0.01],
-    'kernel': ['rbf', 'poly']
-}
+# Classical (example)
+param_grid = {'C': [0.1, 1, 10, 100], 'gamma': ['scale','auto',1e-3,1e-2], 'kernel': ['rbf','poly']}
 
-# Speech LLM training parameters
-training_args = TrainingArguments(
-    num_train_epochs=15,
-    learning_rate=3e-5,
-    per_device_train_batch_size=8
-)
+# Speech LLM (example)
+# transformers.TrainingArguments(...)
 ```
 
 ## 🚦 Troubleshooting
 
-### Common Issues
+- Microphone/PortAudio issues:
+  - Linux: sudo apt-get install libasound2-dev portaudio19-dev
+  - macOS: brew install portaudio
+  - Windows: pip install pipwin && pipwin install pyaudio
+- No detections: ensure OS mic permission; speak ~0.5 s clearly; consider slightly lowering thresholds
+- Too many idle detections: raise energy gate or thresholds; increase warm-up
+- GPU memory: reduce batch size in speech_llm_approach.py
 
-**Audio Device Problems:**
-```bash
-# Linux: Install ALSA development files
-sudo apt-get install libasound2-dev
-
-# macOS: Install portaudio
-brew install portaudio
-```
-
-**GPU Memory Issues:**
-```python
-# Reduce batch size in speech_llm_approach.py
-per_device_train_batch_size=4  # Instead of 8
-```
-
-**Model Loading Errors:**
-```bash
-# Ensure models are trained first
-python 2_classical_approach.py
-python 3_speech_llm_approach.py
-```
-
-## 📖 Academic Applications
-
-### For Research Papers
-- Comparative study methodology
-- Classical vs deep learning benchmarking  
-- Real-time speech processing systems
-- Transfer learning in speech recognition
-
-### For Job Applications
-Perfect demonstration project for positions requiring:
-- **Signal Processing**: MFCC extraction, spectral analysis
-- **Speech Recognition**: Modern transformer architectures
-- **Machine Learning**: End-to-end pipeline development
-- **Software Engineering**: Production-ready implementations
-
-## 📜 Citation
-
-If you use this project in research, please cite:
-```bibtex
-@misc{keyword_spotter_2024,
-  title={Enhanced Keyword Spotter: Classical vs Speech LLM Approaches},
-  author={Your Name},
-  year={2024},
-  url={https://github.com/yourusername/keyword-spotter}
-}
-```
-
-## 🤝 Contributing
-
-Contributions welcome! Areas for improvement:
-- Additional classical features (LPCC, PLP)
-- More Speech LLM architectures (Whisper, SpeechT5)
-- Noise robustness testing
-- Mobile deployment optimization
 
 ## 📄 License
 
-MIT License - see LICENSE file for details.
+Licensed under the **MIT License**. See the LICENSE file.
+
 
 ## 🙏 Acknowledgments
 
-- **Google Speech Commands Dataset**: TensorFlow team
-- **Wav2Vec2 Model**: Facebook AI Research
-- **Librosa Library**: Audio analysis toolkit
-- **Hugging Face Transformers**: Speech LLM implementation
+- Google Speech Commands Dataset (TensorFlow)
+- Wav2Vec2 (Facebook AI Research)
+- Librosa (audio feature extraction)
+- Hugging Face Transformers (model and training utilities)
 
 ---
-
 **⭐ Star this repository if it helps with your speech processing projects!**
