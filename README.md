@@ -41,7 +41,7 @@ Microphone support:
 - Windows: pip install pipwin && pipwin install pyaudio
 - Linux: sudo apt-get install libasound2-dev portaudio19-dev && pip install pyaudio
 
-## Complete Project Pipeline
+### 2. Complete Project Pipeline
 Run everything (includes Speech LLM training — GPU recommended for speed):
 ```bash
 python run_complete_project.py
